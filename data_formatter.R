@@ -2,8 +2,8 @@
 # Read data from sample
 
 if (file.exists("multimedia.csv") && file.exists("occurence.csv")) {
-  multimedia <- read.csv("multimedia.csv", nrows = 10000)
-  occurence <-  read.csv("occurence.csv", nrows = 10000)
+  multimedia <- read.csv("multimedia.csv", nrows = 100)
+  occurence <-  read.csv("occurence.csv", nrows = 100)
 } else {
   print("No samples found in directory")
   print(paste0("Current directory: ", getwd()))
