@@ -10,24 +10,27 @@ fluidPage(
              sidebarLayout(
                sidebarPanel(
                  uiOutput("countryChoice"),
-                 uiOutput("taxonRank"),
-                 uiOutput("kingdom"),
-                 uiOutput("family"),
                  uiOutput("combinedName"),
                  uiOutput("search_by_name"),
-                 uiOutput("animationSlider"),
-               ),
+                 div(id= "addFilters", style = "display: none",
+                uiOutput("taxonRank"),
+                 uiOutput("kingdom"),
+                 uiOutput("family"),
+                 # uiOutput("animationSlider")
+                ),
+                 width = 3),
                mainPanel(
                  uiOutput("introduction"),
                  uiOutput("timeline"),
-                 leafletOutput("world_map", height = "70vh")
+                 leafletOutput("world_map", height = "70vh"),
+                 width = 9
                )
              ),)
   ),
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "./custom.css"),
     tags$script(src = "./js/timeline.js"),
-    tags$script(src = "./js/chart.js"),
+    tags$script(src = "./js/chart.js")
     # tags$script(src = "./chart-js/bar.js")
   ),
 )

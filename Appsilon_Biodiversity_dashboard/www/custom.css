@@ -1,6 +1,10 @@
 * {
   box-sizing: border-box;
 }
+
+#addFilters {
+  /* display: none;  */
+}
 .row {
   padding: 10px;
   margin: 0;

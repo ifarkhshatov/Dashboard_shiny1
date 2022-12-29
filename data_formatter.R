@@ -1,5 +1,6 @@
 # Load the data.table package
 library(data.table)
+
 # Set the path to the CSV file
 csv_path <- "occurence.csv"
 
@@ -57,4 +58,4 @@ for (country in names(data_tables)) {
 save(data_tables, file = paste0("big_data.RData"))
 
 file.exists("Appsilon_Biodiversity_dashboard/data/AAS.RData")
-load(file = "Appsilon_Biodiversity_dashboard/data/PL.RData")
+load(file = "Appsilon_Biodiversity_dashboard/data/BG.RData")

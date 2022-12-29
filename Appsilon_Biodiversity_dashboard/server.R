@@ -13,20 +13,29 @@ list_of_countries <-
 library(shiny)
 
 # Define server logic required to draw a histogram
+#suspendWhenHidden=FALSE 
 function(input, output, session) {
-  
   # Country choice:
   output$animationSlider <- renderUI({
-    sliderInput("animationSlider2", "Dynamic animation slider", 
-                min = 1, max = 100, value = 1, step = 1,
-                animate = animationOptions(200))
+    sliderInput(
+      "animationSlider2",
+      "Dynamic animation slider",
+      min = 1,
+      max = 100,
+      value = 1,
+      step = 1,
+      animate = animationOptions(200)
+    )
   })
   
   output$countryChoice <- renderUI({
     choices <- list_of_countries$Name
-    selectInput("countryChoice",
-                label = "Choose country",
-                choices = choices)
+    selectInput(
+      "countryChoice",
+      label = "Choose country",
+      choices = choices,
+      selected =  "Poland"
+    )
   })
   #
   main_data <- eventReactive(input$countryChoice, {
@@ -38,21 +47,55 @@ function(input, output, session) {
     data_to_save
   })
   
+  # firstly show search bar
+  output$combinedName <- renderUI({
+    # data.table do it faster than dplyr
+    choices <-
+      unique(setDT(main_data())[, count := .N, by =scientificName ][
+        order(count, decreasing = TRUE)
+      ][, combinedName := paste0(
+        vernacularName , " (", scientificName, ") count: ", count
+      )][, .(combinedName)])$combinedName
+    
+    selectizeInput(
+      inputId = "combinedName",
+      multiple = FALSE,
+      selected = NULL,
+      choices = c("", choices),
+      label = "Choose species"
+    )
+    
+  })
+  # button show advanced
+  
+  #Button search by name
+  output$search_by_name <- renderUI({
+    actionButton("search_by_name", "Show advanced option")
+  })
+  
+  # Workaround to not use packages such shinyJS
+  observeEvent(input$search_by_name, {
+    session$sendCustomMessage(type = "addFilters", message = jsonlite::toJSON("click"))
+  })
+  
   
   
   output$taxonRank <- renderUI({
     req(main_data())
     
-    taxon <- unique(main_data()$taxonRank)
+    taxon <-
+      unique(main_data() %>% arrange(taxonRank) %>% select(taxonRank) %>% c() %>% unlist())
     
     selectInput("taxonRank", "Taxonomic rank:", choices = taxon)
   })
+  outputOptions(output, "taxonRank",suspendWhenHidden = FALSE)
   
   output$kingdom <- renderUI({
     req(input$taxonRank)
     kingdom <- unique(
       main_data() %>%
         filter(taxonRank %in% input$taxonRank) %>%
+        arrange(kingdom) %>%
         select(kingdom) %>% c() %>% unlist()
     )
     selectInput("kingdom",
@@ -61,12 +104,15 @@ function(input, output, session) {
                 multiple = FALSE)
   })
   
+  outputOptions(output, "kingdom",suspendWhenHidden = FALSE)
+  
   output$family <- renderUI({
     req(input$kingdom)
     family <- unique(
       main_data() %>%
         filter(taxonRank %in% input$taxonRank) %>%
         filter(kingdom %in% input$kingdom) %>%
+        arrange(family) %>%
         select(family) %>% c() %>% unlist()
     )
     selectInput("family",
@@ -75,40 +121,11 @@ function(input, output, session) {
                 multiple = FALSE)
   })
   
-  #Button search by name
-  output$search_by_name <- renderUI({
-    actionButton("search_by_name", "Search by name instead")
-  })
-  # Initialize a reactive value to store the visibility of the renderUI output
-  vis <- reactiveValues(visible = TRUE)
-  # Observe the button click and toggle the reactive value
-  observeEvent(input$button, {
-    vis$visible <- !vis$visible
-  })
+  
+  outputOptions(output, "family",suspendWhenHidden = FALSE)
   
   
   # it depends on country selected
-  output$combinedName <- renderUI({
-    req(input$family)
-    choices <-
-      unique(
-        main_data() %>%
-          filter(family %in% input$family) %>%
-          select(scientificName , vernacularName) %>%
-          mutate(combinedName = paste0(
-            vernacularName , " (", scientificName, ")"
-          )) %>%
-          select(Species = combinedName) %>% c()
-      )
-    
-    selectizeInput(
-      inputId = "combinedName",
-      multiple = TRUE,
-      choices = unlist(choices),
-      label = "Choose species (possible multiple)"
-    )
-    
-  })
   
   output$introduction <- renderUI({
     
@@ -140,28 +157,45 @@ function(input, output, session) {
       filter(scientificName %in% scientificNameV)
     data
   })
+  # data for timeline. if species is "", then total distribution by year
+  observeEvent({input$countryChoice
+    input$combinedName }, {
+    
+      if (length(input$combinedName) == 0 ||input$combinedName == "") {
+    df <- main_data()[, labels := year(eventDate)
+    ]
+    #"setkey" function to create a new column called "year" that contains the year of the "date" column.
+    setkey(df, labels)
+    df <- df[order(labels)][, .(data = .N), by = labels]
+      } else {
+        df <-  data_map() %>%
+          group_by(labels = year(eventDate), drop = FALSE) %>%
+          summarise(data = n(), .groups = "drop") %>%
+          ungroup()
+        print(df)
+      }
+    
+    session$sendCustomMessage(type = "timelineChart", message = jsonlite::toJSON(df))
+  })
   
   # data has wrong LAT LONG
   output$world_map <- renderLeaflet({
     req(data_map())
-    leaflet(data = data_map()) %>%
+
+  leaflet(data = data_map()) %>%
       addTiles() %>%
-      addMarkers(~latitudeDecimal, ~longitudeDecimal, popup  = "Will be short info and img if present, i press more and it will open next tab" ) %>%
-      addProviderTiles(provider = providers$OpenTopoMap)
+      addMarkers(
+        ~ latitudeDecimal,
+        ~ longitudeDecimal,
+        popup  = '<p>This is bla-bla-bla, here is image:</p>
+<img src="image.jpg" alt="image">
+<button class="detailed_tab">click this button for more info</button>' ,
+        clusterOptions = markerClusterOptions()
+      ) %>%
+      addProviderTiles(provider = providers$Jawg.Light)
   })
   
-  observeEvent(data_map(),{
-    req(input$combinedName)
-    req(data_map())
-    
-  df <-  data_map() %>%
-      group_by(labels = year(eventDate)) %>%
-      summarise(data = n()) %>%
-      ungroup()
-  
-  session$sendCustomMessage(type = "timelineChart", message = jsonlite::toJSON(df))
-  })
-  
+
   #welcome page
   output$start_page <- renderUI({
     includeHTML("www/index.html")
@@ -170,7 +204,7 @@ function(input, output, session) {
   #render timeline chart area
   output$timeline <- renderUI({
     div(class = "timeline-chart",
-           div(class = "timeline"))
+        div(class = "timeline"))
   })
   
   
