@@ -53,7 +53,7 @@ body {
 }
 
 .nav-tabs>li>a {
-  color: #364935;
+  color: rgb(54, 73, 53);
 }
 /*  slider */
 .irs--shiny .irs-from, .irs--shiny .irs-to, .irs--shiny .irs-single {

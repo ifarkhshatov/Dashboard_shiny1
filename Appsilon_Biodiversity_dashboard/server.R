@@ -2,6 +2,7 @@ library(tidyverse)
 library(leaflet)
 library(sf)
 library(data.table)
+library(lubridate)
 
 # read list of countries
 list_of_countries <-
@@ -37,6 +38,8 @@ function(input, output, session) {
     data_to_save
   })
   
+  
+  
   output$taxonRank <- renderUI({
     req(main_data())
     
@@ -55,7 +58,7 @@ function(input, output, session) {
     selectInput("kingdom",
                 "Kingdom:",
                 choices = kingdom,
-                multiple = TRUE)
+                multiple = FALSE)
   })
   
   output$family <- renderUI({
@@ -69,7 +72,7 @@ function(input, output, session) {
     selectInput("family",
                 "Family:",
                 choices = family,
-                multiple = TRUE)
+                multiple = FALSE)
   })
   
   #Button search by name
@@ -111,22 +114,22 @@ function(input, output, session) {
     
   })
   
-  output$timeline <- renderUI({
-    req(input$combinedName)
-    sliderInput(
-      label = NULL,
-      inputId = "timeline",
-      min = as.Date("2020-01-01"),
-      max = Sys.Date(),
-      value = as.Date("2020-01-01"),
-      step = 1,
-      animate = animationOptions() ,
-      timeFormat = "%Y-%m-%d",
-    )
-  })
+  # output$timeline <- renderUI({
+  #   req(input$combinedName)
+  #   sliderInput(
+  #     label = NULL,
+  #     inputId = "timeline",
+  #     min = as.Date("2020-01-01"),
+  #     max = Sys.Date(),
+  #     value = as.Date("2020-01-01"),
+  #     step = 1,
+  #     animate = animationOptions() ,
+  #     timeFormat = "%Y-%m-%d",
+  #   )
+  # })
   
   
-  data <- eventReactive(input$combinedName, {
+  data_map <- eventReactive(input$combinedName, {
     req(input$combinedName)
     req(main_data())
     # split input names into scientific and classic one
@@ -137,19 +140,40 @@ function(input, output, session) {
       filter(scientificName %in% scientificNameV)
     data
   })
+  
   # data has wrong LAT LONG
   output$world_map <- renderLeaflet({
-    req(data())
-    leaflet(data = data()) %>%
+    req(data_map())
+    leaflet(data = data_map()) %>%
       addTiles() %>%
       addMarkers(~latitudeDecimal, ~longitudeDecimal, popup  = "Will be short info and img if present, i press more and it will open next tab" ) %>%
-      addProviderTiles(providers$Esri.WorldStreetMap)
-   
+      addProviderTiles(provider = providers$OpenTopoMap)
   })
   
+  observeEvent(data_map(),{
+    req(input$combinedName)
+    req(data_map())
+    
+  df <-  data_map() %>%
+      group_by(labels = year(eventDate)) %>%
+      summarise(data = n()) %>%
+      ungroup()
+  
+  session$sendCustomMessage(type = "timelineChart", message = jsonlite::toJSON(df))
+  })
+  
+  #welcome page
   output$start_page <- renderUI({
     includeHTML("www/index.html")
   })
+  
+  #render timeline chart area
+  output$timeline <- renderUI({
+    div(class = "timeline-chart",
+           div(class = "timeline"))
+  })
+  
+  
   # maybe will remove...
   # observe({
   #   # last clicked input value
