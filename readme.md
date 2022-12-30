@@ -7,7 +7,7 @@ EXTRA used in dashboard:
 - JavaScript skill: I tried to use as few R packages as possible and do as much as possible with vanilla shiny, so I used a lot of JavaScript. The timeline chart is also fully built with JavaScript (using `chart.js`).
 
 ## See demo:
-![Demo]("Demo.gif")
+![Demo](Demo.gif)
 
 
 # Species Search Shiny App
