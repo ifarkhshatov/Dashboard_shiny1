@@ -1,22 +1,57 @@
-var video = document.getElementById("myVideo");
-var btn = document.getElementById("myBtn");
-
-function myFunction() {
-  // open first page of dashboard
-  $('.nav-tabs li a')[1].click()
+// var video = document.getElementById("myVideo");
+// var btn = document.getElementById("myBtn");
+//close intro
+function closeIntro(){
+$('#introDiv').slideToggle();
+Shiny.setInputValue('introDivClose',"go")
 }
+// start buttons
+function clickFunctionStart(id) {
+  var index; 
+  if (id == "dashboardBtn") {
+    index = 2
+  } else {
+    index = 1
+  }
+  // open first page of dashboard
+  $('.nav-tabs li a')[index].click()
+}
+// imitation of slider from shiny.js 
 
 Shiny.addCustomMessageHandler("addFilters", function (data) {
     if(data[0] === "click") {
+    if ($("#search_by_name i").hasClass("fa-caret-up")) {
+
+        $("#search_by_name i").removeClass("fa-caret-up").addClass('fa-caret-down')
+    } else {
+        $("#search_by_name i").removeClass("fa-caret-down").addClass('fa-caret-up')
+    }
     $("#addFilters").slideToggle()
    }
 })
 
-// $(document).ready(function() {
-//             $("#addFilters").slideToggle()
+
+//closing tab
+Shiny.addCustomMessageHandler("closeThisTab", function (data) {
+  $('.closeButtons').click(  function(data) {
+    $('.nav-tabs li a')[2].click()
+    var dataValue = $(this).parent().parent()[0].getAttribute("data-value");
+        Shiny.setInputValue('closeIdTab',   dataValue)
         
-// });
-    
+  });
+
+
+})
+
+
+// return id of Map
+
+function clickIdFunction(id) {
+Shiny.setInputValue('idFromMapMarker',id)
+}
+
+
+
 var timelineChartData
 Shiny.addCustomMessageHandler("timelineChart", function (data) {
     timelineChartData = data;
@@ -66,9 +101,6 @@ function createChart(className, data) {
     if (data.length < 15) {
         animation = {}
     }
-
-    console.log(data.length)
-
   new Chart(ctx, {
     type: 'line',
     data: {
@@ -93,8 +125,12 @@ function createChart(className, data) {
              },
              title:{
                 display: true,
-                text: 'Species Timeline Distribution by Year of Fidings',
-                fontSize: 14,
+                text: 'Species Timeline Distribution by Year',
+                align: 'start',
+                font: {
+                    size: 16,
+                    weight: 10
+                }
              },
              tooltips: {
                 enabled: false,

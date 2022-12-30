@@ -6,6 +6,7 @@ fluidPage(
   tabsetPanel(
     id = "tabsetPanel1",
     tabPanel("Home", uiOutput("start_page")),
+    tabPanel("Info", uiOutput("introduction")),
     tabPanel("Dashboard",
              sidebarLayout(
                sidebarPanel(
@@ -20,16 +21,17 @@ fluidPage(
                 ),
                  width = 3),
                mainPanel(
-                 uiOutput("introduction"),
+                 uiOutput("intro"),
                  uiOutput("timeline"),
                  leafletOutput("world_map", height = "70vh"),
                  width = 9
                )
              ),)
+    
   ),
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "./custom.css"),
-    tags$script(src = "./js/timeline.js"),
+    tags$script(src = "./js/index.js"),
     tags$script(src = "./js/chart.js")
     # tags$script(src = "./chart-js/bar.js")
   ),
