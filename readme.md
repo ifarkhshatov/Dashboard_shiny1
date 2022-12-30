@@ -1,3 +1,15 @@
+EXTRA used in dashboard:
+
+- Beautiful UI skill: I slightly adjusted colors and made some other small design changes.
+
+- Performance optimization skill: I used the `data.table` package for handling data (see `data_formatter.R`).
+
+- JavaScript skill: I tried to use as few R packages as possible and do as much as possible with vanilla shiny, so I used a lot of JavaScript. The timeline chart is also fully built with JavaScript (using `chart.js`).
+
+## See demo:
+![Demo]("Demo.gif")
+
+
 # Species Search Shiny App
 
 This Shiny app allows users to search for species using various criteria, including common and scientific names, taxonomic rank, and kingdom and family. The app also displays a map visualization of the locations where the selected species have been observed.

@@ -137,13 +137,13 @@ function(input, output, session) {
       
       updateSelectizeInput(session, inputId = "combinedName",
                            choices =  updated_species )
-      print('test1')
+
     } else {
       # keep last selected species
       updateSelectizeInput(session, inputId = "combinedName",
                            choices =  unique(setDT(main_data())[
-                             , .(combinedName)])$combinedName)
-      print("test2")
+                             , .(combinedName)])$combinedName, selected = "")
+
     }
 
     
@@ -209,10 +209,6 @@ function(input, output, session) {
         clusterOptions = markerClusterOptions()
       ) %>%
       addProviderTiles(provider = providers$Jawg.Light)
-#     
-#     popup  = '<p>This is bla-bla-bla, here is image:</p>
-# <img src="image.jpg" alt="image">
-# <button class="detailed_tab">click this button for more info</button>' ,
   })
   
   
@@ -294,7 +290,6 @@ function(input, output, session) {
   observeEvent(input$closeIdTab, {
     removeTab(inputId = "tabsetPanel1", target = input$closeIdTab)
     numTabs$value <- numTabs$value-1
-    print(input$closeIdTab)
   })
 
 

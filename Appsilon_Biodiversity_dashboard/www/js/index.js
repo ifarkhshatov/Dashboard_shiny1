@@ -45,6 +45,7 @@ Shiny.addCustomMessageHandler("closeThisTab", function (data) {
 // return id of Map
 
 function clickIdFunction(id) {
+  console.log("id")
 Shiny.setInputValue('idFromMapMarker',id)
 }
 
