@@ -33,13 +33,11 @@ Shiny.addCustomMessageHandler("addFilters", function (data) {
 
 //closing tab
 Shiny.addCustomMessageHandler("closeThisTab", function (data) {
-  $('.closeButtons').click(  function(data) {
-    $('.nav-tabs li a')[2].click()
+  $('.closeButtons').click(  function() {
     var dataValue = $(this).parent().parent()[0].getAttribute("data-value");
         Shiny.setInputValue('closeIdTab',   dataValue)
-        
   });
-
+  clickFunctionStart('dashboardBtn')
 
 })
 

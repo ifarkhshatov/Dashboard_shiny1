@@ -255,6 +255,7 @@ function(input, output, session) {
         # insert the new tab
         insertTab(inputId = "tabsetPanel1",
                   tabPanel(div(id,actionButton(class ="closeButtons",
+                                               onClik = "console.log('Button was clicked!')",
                                                inputId = "closeSpeciesTab", icon("times", class = "fa-lg") ) ) ,
                            div(
                              h1( paste0(
