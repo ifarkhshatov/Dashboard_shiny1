@@ -27,31 +27,39 @@ function(input, output, session) {
       selected =  "Poland"
     )
   })
+  
   #load prepared RData with title of country
-  main_data <- eventReactive(input$countryChoice, {
+  main_data <- eventReactive({c(input$countryChoice,
+    input$search_by_name)}, {
     req(input$countryChoice)
     # select country code
     country_code <-
       list_of_countries$Code[list_of_countries$Name == input$countryChoice]
-    load(paste0("data/", country_code, ".RData"))
     
-    setDT(data_to_save)[, count := .N, by = scientificName
+    load(paste0("data/", country_code, ".RData"))
+   setDT(data_to_save)[, count := .N, by = scientificName
     ][order(count, decreasing = TRUE)
     ][, combinedName := paste0(vernacularName , " (", scientificName, 
                                ") count: ", count)
     ]
+    
   })
+  
+  combinedNameChoices <- eventReactive(c(main_data()),{
+      unique(main_data()[, .(combinedName)])$combinedName
+  })
+  
+  
   
   # firstly show search bar
   output$combinedName <- renderUI({
     # data.table do it faster than dplyr
-    choices <-
-      unique(main_data()[, .(combinedName)])$combinedName
+
     selectizeInput(
       inputId = "combinedName",
       multiple = FALSE,
       selected = NULL,
-      choices = c("", choices),
+      choices = c("", combinedNameChoices()),
       label = "Choose species"
     )
   })
@@ -75,7 +83,7 @@ function(input, output, session) {
   output$taxonRank <- renderUI({
     req(main_data())
     taxon <-
-      unique(setDT(main_data())[, .(taxonRank)])$taxonRank
+     unique(main_data()[, .(taxonRank)])$taxonRank
     
     selectInput("taxonRank", "Taxonomic rank:", choices =  taxon)
   })
@@ -84,7 +92,7 @@ function(input, output, session) {
   output$kingdom <- renderUI({
    
     req(input$taxonRank)
-    kingdom <-  unique(setDT(main_data())[taxonRank %in% input$taxonRank
+    kingdom <- unique(main_data()[taxonRank %in% input$taxonRank
                                           ][, .(kingdom)])$kingdom
     
     selectInput("kingdom",
@@ -98,8 +106,8 @@ function(input, output, session) {
   output$family <- renderUI({
     req(input$kingdom)
  
-    family <- unique(
-      setDT(main_data())[
+    family <-unique(
+      main_data()[
         taxonRank %in% input$taxonRank
       ][
         kingdom %in% input$kingdom][, .(family)])$family
@@ -114,40 +122,55 @@ function(input, output, session) {
   
   # Create a reactive value to store the button state
   button_state <- reactiveValues(state = FALSE)
+  
   observeEvent(input$search_by_name, {
     button_state$state <- !button_state$state
+    updateSelectizeInput(inputId="taxonRank")
+    updateSelectizeInput(inputId="kingdom")
+    updateSelectizeInput(inputId="family")
+    # updateSelectizeInput(inputId="combinedName")
     })
   # Behavior of filter:
   
-  observeEvent({
-    input$countryChoice
+  
+  observeEvent(
+    {
     input$search_by_name
     input$family
-    main_data()
-  },{
+    main_data()},{
     # Toggle the button state when the button is clicked
     if ( button_state$state) {
-      updated_species <- unique(setDT(main_data())[
-        taxonRank %in% input$taxonRank
-      ][
-        kingdom %in% input$kingdom
-      ][
-        family %in% input$family
-      ][, .(combinedName)])$combinedName
+      updateSelectizeInput(inputId="taxonRank")
+      updateSelectizeInput(inputId="kingdom")
+      updateSelectizeInput(inputId="family")
       
-      updateSelectizeInput(session, inputId = "combinedName",
-                           choices =  updated_species )
-
+      updated_species <- unique(
+        main_data()[
+          taxonRank %in% input$taxonRank
+        ][
+          kingdom %in% input$kingdom
+        ][
+          family %in% input$family
+        ][combinedName %in% combinedNameChoices()
+          ][, .(combinedName)])$combinedName
+ 
+      updateSelectizeInput(inputId = "combinedName",
+                           choices =  updated_species, selected ="" )
     } else {
-      # keep last selected species
-      updateSelectizeInput(session, inputId = "combinedName",
-                           choices =  unique(setDT(main_data())[
-                             , .(combinedName)])$combinedName, selected = "")
-
+      updateSelectizeInput(inputId="taxonRank", selected ="")
+      updateSelectizeInput(inputId="kingdom", selected ="")
+      updateSelectizeInput(inputId="family", selected ="")
     }
-
-    
   })
+  
+  observeEvent(input$countryChoice, {
+    updateSelectizeInput(inputId = "combinedName",
+                         choices =  combinedNameChoices(), selected ="" )
+  })
+  
+  
+  
+  
   # it depends on country selected
   
   output$introduction <- renderUI({
@@ -193,6 +216,7 @@ function(input, output, session) {
     session$sendCustomMessage(type = "timelineChart", message = jsonlite::toJSON(df))
   })
   
+
   # data has wrong LAT LONG
   output$world_map <- renderLeaflet({
     req(data_map())
@@ -237,7 +261,7 @@ function(input, output, session) {
   # create new tab with detailed info about species
   observeEvent(input$idFromMapMarker,{
     id <- input$idFromMapMarker
-      if (numTabs$value < 9) {
+      if (numTabs$value < 5) {
         
         # Scrape the data from the website
         url <- paste0("https://waarneming.nl/observation/",gsub("[^0-9]", "", id))
@@ -279,7 +303,7 @@ function(input, output, session) {
         # show warning message
         showModal(modalDialog(
           title = "Warning",
-          "Only 5 tabs are possible. Please close a tab and try again."
+          " Please close opened tab and try again."
         ))
       }
   })

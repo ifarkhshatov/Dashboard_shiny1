@@ -126,9 +126,10 @@ function createChart(className, data) {
                 display: true,
                 text: 'Species Timeline Distribution by Year',
                 align: 'start',
+                color: 'rgb(68, 92, 66)',
                 font: {
                     size: 16,
-                    weight: 10
+                    weight: 10,
                 }
              },
              tooltips: {
