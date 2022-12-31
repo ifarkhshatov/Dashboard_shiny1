@@ -306,10 +306,11 @@ function(input, output, session) {
   # close open tab
   observeEvent(input$closeSpeciesTab, {
     session$sendCustomMessage(type = "closeThisTab", message = jsonlite::toJSON("closeThisTab"))
-  })
+    numTabs$value <- numTabs$value-1
+    })
   observeEvent(input$closeIdTab, {
     removeTab(inputId = "tabsetPanel1", target = input$closeIdTab)
-    numTabs$value <- numTabs$value-1
+
   })
 
 
