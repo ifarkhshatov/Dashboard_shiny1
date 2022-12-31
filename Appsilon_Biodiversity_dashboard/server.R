@@ -45,7 +45,7 @@ function(input, output, session) {
     
   })
   
-  combinedNameChoices <- eventReactive(c(main_data()),{
+  combinedNameChoices <- eventReactive(main_data(),{
       unique(main_data()[, .(combinedName)])$combinedName
   })
   
@@ -125,10 +125,6 @@ function(input, output, session) {
   
   observeEvent(input$search_by_name, {
     button_state$state <- !button_state$state
-    updateSelectizeInput(inputId="taxonRank")
-    updateSelectizeInput(inputId="kingdom")
-    updateSelectizeInput(inputId="family")
-    # updateSelectizeInput(inputId="combinedName")
     })
   # Behavior of filter:
   
