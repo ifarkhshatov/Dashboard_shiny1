@@ -213,16 +213,14 @@ function(input, output, session) {
       popup = paste0(
         "<b>", data_map()$vernacularName, " (", data_map()$scientificName, ")</b>",
         "<p> Date of finding: ", data_map()$eventDate, "</p>",
-        '<button onClick="clickIdFunction(\'', data_map()$id, '\')" id="',
+        '<button class="mapMarkerButton" onClick="clickIdFunction(\'', data_map()$id, '\')" id="',
         data_map()$id, '">click for more info</button>'
       ),
       clusterOptions = markerClusterOptions()
     )  %>%
       addProviderTiles(provider = providers$Jawg.Light)
     
-    
-    
-    
+    # Data for timeline chart
     if (length(input$combinedName) == 0 || input$combinedName == "") {
       df <- main_data()[, labels := year(eventDate)]
       #"setkey" function to create a new column called "year" that contains the year of the "date" column.
@@ -253,18 +251,13 @@ function(input, output, session) {
   numTabs <- reactiveValues(value = 3)
   
   # observe the tabsetPanel and update the reactive value whenever a tab is added or removed
-  observeEvent(input$idFromMapMarker,{
-    numTabs$value <- numTabs$value+1
-  })
-  
-  # parse data for add info
-
   
   # create new tab with detailed info about species
-  observeEvent(input$idFromMapMarker,{
-    id <- input$idFromMapMarker
-      if (numTabs$value < 5) {
-        
+  observeEvent(input$idFromMapMarker$doubleCountTab,{
+
+      if (numTabs$value == 3 ) {
+        id <- input$idFromMapMarker$id
+        numTabs$value <- numTabs$value+1
         # Scrape the data from the website
         url <- paste0("https://waarneming.nl/observation/",gsub("[^0-9]", "", id))
         page <- read_html(url)
@@ -276,13 +269,16 @@ function(input, output, session) {
         
         # insert the new tab
         insertTab(inputId = "tabsetPanel1",
-                  tabPanel(div(id,actionButton(class ="closeButtons",
-                                               onClik = "console.log('Button was clicked!')",
+                  tabPanel(div(id,actionButton(class ="closeButtons", onclick = "
+
+  Shiny.setInputValue('tabPanelName', $(this).parent().parent()[0].getAttribute('data-value'));
+
+                                               ",
                                                inputId = "closeSpeciesTab", icon("times", class = "fa-lg") ) ) ,
                            div(
                              h1( paste0(
-                               unlist(main_data()[id == input$idFromMapMarker]$vernacularName),
-                               " (", unlist(main_data()[id == input$idFromMapMarker]$scientificName), ")"
+                               unlist(main_data()[id == input$idFromMapMarker$id]$vernacularName),
+                               " (", unlist(main_data()[id == input$idFromMapMarker$id]$scientificName), ")"
                              )  ),
                              DT::renderDataTable(observation_details,
                                                  options = list(lengthChange = FALSE,
@@ -309,16 +305,15 @@ function(input, output, session) {
         ))
       }
   })
+  
+  observeEvent(input$closeSpeciesTab, {
+    removeTab(inputId = "tabsetPanel1", target = input$tabPanelName)
+    numTabs$value <- numTabs$value - 1
+  })
+  
   # close open tab
   observeEvent(input$closeSpeciesTab, {
     session$sendCustomMessage(type = "closeThisTab", message = jsonlite::toJSON("closeThisTab"))
-    numTabs$value <- numTabs$value-1
     })
-  observeEvent(input$closeIdTab, {
-    removeTab(inputId = "tabsetPanel1", target = input$closeIdTab)
-
-  })
-
-
   
 }

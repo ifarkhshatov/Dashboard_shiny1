@@ -1,5 +1,3 @@
-// var video = document.getElementById("myVideo");
-// var btn = document.getElementById("myBtn");
 //close intro
 function closeIntro(){
 $('#introDiv').slideToggle();
@@ -31,22 +29,18 @@ Shiny.addCustomMessageHandler("addFilters", function (data) {
 })
 
 
+
 //closing tab
 Shiny.addCustomMessageHandler("closeThisTab", function (data) {
-  $('.closeButtons').click(  function() {
-    var dataValue = $(this).parent().parent()[0].getAttribute("data-value");
-        Shiny.setInputValue('closeIdTab',   dataValue)
-  });
-  clickFunctionStart('dashboardBtn')
-
+  clickFunctionStart('dashboardBtn');
 })
 
-
+var doubleCountTab=1;
 // return id of Map
-
 function clickIdFunction(id) {
-  console.log("id")
-Shiny.setInputValue('idFromMapMarker',id)
+  console.log(id)
+  doubleCountTab++;
+Shiny.setInputValue('idFromMapMarker',{id, doubleCountTab})
 }
 
 
@@ -129,7 +123,7 @@ function createChart(className, data) {
                 color: 'rgb(68, 92, 66)',
                 font: {
                     size: 16,
-                    weight: 10,
+                    weight: 'bold',
                 }
              },
              tooltips: {

@@ -34,7 +34,7 @@ body {
     text-shadow: 2px 2px 4px #000000;
 }
 
-#dashboardBtn, #infoBtn, #closeIntro {
+#dashboardBtn, #infoBtn, #closeIntro,.mapMarkerButton {
   background-color: #364935;
   margin-right: 10px;
   opacity: 90%;
@@ -75,9 +75,15 @@ label {
 }
 
 
-#dashboardBtn:hover, #infoBtn:hover, #closeIntro:hover {
+#dashboardBtn:hover, #infoBtn:hover, #closeIntro:hover, .mapMarkerButton:hover {
   opacity: 100%;
   background-color: #445c42;
+}
+
+.mapMarkerButton {
+  float: none !important;  
+  padding: 6px 9px !important;
+  font-size: 13px !important;
 }
 /* timeline slider */
 #timeline div{
@@ -220,4 +226,22 @@ li {
 .highlight {
   font-weight: bold;
   color: #445c42;
+}
+
+/* Background for IOS */
+#fallback-image {
+  display: none;
+}
+@media only screen and (max-device-width: 1024px) {
+  #fallback-image {
+    display: block;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    min-width: 100%; 
+    min-height: 100%;
+  }
+  #myVideo {
+    display: none;
+  }
 }
