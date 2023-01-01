@@ -5,7 +5,6 @@ library(data.table)
 library(lubridate)
 library(rvest)
 library(DT)
-
 # read list of countries
 list_of_countries <-
   fread("data_countries.csv", encoding = "UTF-8") %>%
@@ -29,40 +28,40 @@ function(input, output, session) {
   })
   
   #load prepared RData with title of country
-  main_data <- eventReactive({c(input$countryChoice,
-    input$search_by_name)}, {
+  main_data <- reactive({
+        
     req(input$countryChoice)
     # select country code
     country_code <-
       list_of_countries$Code[list_of_countries$Name == input$countryChoice]
-    
+    if (exists("data_to_save")) {rm(data_to_save)}
     load(paste0("data/", country_code, ".RData"))
-   setDT(data_to_save)[, count := .N, by = scientificName
+    
+  setDT(data_to_save)[, count := .N, by = scientificName
     ][order(count, decreasing = TRUE)
     ][, combinedName := paste0(vernacularName , " (", scientificName, 
                                ") count: ", count)
     ]
-    
   })
   
-  combinedNameChoices <- eventReactive(main_data(),{
-      unique(main_data()[, .(combinedName)])$combinedName
+  combinedNameChoices <- reactive({
+         # data.table do it faster than dplyr
+    x <- unique(main_data()[, .(combinedName)])$combinedName
+          return(x)
   })
   
-  
-  
+
   # firstly show search bar
   output$combinedName <- renderUI({
-    # data.table do it faster than dplyr
-
     selectizeInput(
       inputId = "combinedName",
       multiple = FALSE,
-      selected = NULL,
+      selected = NULL, options = list(maxOptions = 100000L),
       choices = c("", combinedNameChoices()),
       label = "Choose species"
     )
   })
+
   # button show advanced
   
   #Button search by name
@@ -128,18 +127,12 @@ function(input, output, session) {
     })
   # Behavior of filter:
   
-  
-  observeEvent(
-    {
+  observeEvent({
     input$search_by_name
     input$family
-    main_data()},{
+    },{
     # Toggle the button state when the button is clicked
     if ( button_state$state) {
-      updateSelectizeInput(inputId="taxonRank")
-      updateSelectizeInput(inputId="kingdom")
-      updateSelectizeInput(inputId="family")
-      
       updated_species <- unique(
         main_data()[
           taxonRank %in% input$taxonRank
@@ -149,21 +142,20 @@ function(input, output, session) {
           family %in% input$family
         ][combinedName %in% combinedNameChoices()
           ][, .(combinedName)])$combinedName
- 
+
       updateSelectizeInput(inputId = "combinedName",
                            choices =  updated_species, selected ="" )
     } else {
-      updateSelectizeInput(inputId="taxonRank", selected ="")
-      updateSelectizeInput(inputId="kingdom", selected ="")
-      updateSelectizeInput(inputId="family", selected ="")
+      updateSelectizeInput(inputId = "combinedName", server = TRUE,
+                           choices =  combinedNameChoices(), selected ="" )
     }
   })
-  
-  observeEvent(input$countryChoice, {
-    updateSelectizeInput(inputId = "combinedName",
+
+  observeEvent(combinedNameChoices(), {
+    updateSelectizeInput(inputId = "combinedName", server = TRUE,
                          choices =  combinedNameChoices(), selected ="" )
   })
-  
+
   
   
   
@@ -178,25 +170,59 @@ function(input, output, session) {
     includeHTML("www/intro.html")
   })
   
-  data_map <- eventReactive({    input$countryChoice
-    input$combinedName
-    input$introDivClose}, {
-    req(input$introDivClose)
-    if (length(input$combinedName) == 0 || input$combinedName == "") {
-      main_data()
-    } else {
-      main_data()[combinedName %in% input$combinedName]
+  data_map <- eventReactive({input$combinedName
+    input$introDivClose
+    input$countryChoice},{
       
+    if (length(input$combinedName) == 0 || input$combinedName == "") {
+      x <- main_data()
+    } else {
+    x <- main_data()[combinedName %in% input$combinedName]
+
     }
+    return(x)
 
   })
+  
+  #data has wrong LAT LONG
+  output$world_map <- renderLeaflet({
+    req(input$introDivClose)
+    
+    leaflet() %>%
+      addTiles()
+  })
+  
+  
   # data for timeline. if species is "", then total distribution by year
   observeEvent({
-    input$countryChoice
-    input$combinedName
-    input$introDivClose
+    data_map()
   }, {
     req(input$introDivClose)
+    lat <- mean(data_map()$longitudeDecimal)
+    lng <- mean(data_map()$latitudeDecimal)
+    proxy <- leafletProxy("world_map", data = data_map()) %>%
+      setView(lat= lat,lng =lng, zoom = 6)
+    
+    proxy %>%
+      clearGroup("the_only_way_is_to_remove_markers_on_the_map_lol")
+    proxy %>%
+      addMarkers(
+      ~ latitudeDecimal,
+      ~ longitudeDecimal,
+      group = "the_only_way_is_to_remove_markers_on_the_map_lol",
+      popup = paste0(
+        "<b>", data_map()$vernacularName, " (", data_map()$scientificName, ")</b>",
+        "<p> Date of finding: ", data_map()$eventDate, "</p>",
+        '<button onClick="clickIdFunction(\'', data_map()$id, '\')" id="',
+        data_map()$id, '">click for more info</button>'
+      ),
+      clusterOptions = markerClusterOptions()
+    )  %>%
+      addProviderTiles(provider = providers$Jawg.Light)
+    
+    
+    
+    
     if (length(input$combinedName) == 0 || input$combinedName == "") {
       df <- main_data()[, labels := year(eventDate)]
       #"setkey" function to create a new column called "year" that contains the year of the "date" column.
@@ -208,30 +234,10 @@ function(input, output, session) {
         summarise(data = n(), .groups = "drop") %>%
         ungroup()
     }
-    
+
     session$sendCustomMessage(type = "timelineChart", message = jsonlite::toJSON(df))
   })
-  
 
-  # data has wrong LAT LONG
-  output$world_map <- renderLeaflet({
-    req(data_map())
-    req(input$introDivClose)
-    leaflet(data = data_map()) %>%
-      addTiles() %>%
-      addMarkers(
-        ~ latitudeDecimal,
-        ~ longitudeDecimal,
-        popup = paste0("<b>",data_map()$vernacularName," (",data_map()$scientificName,")</b>",
-                       "<p> Date of finding: ",data_map()$eventDate,"</p>",
-                       '<button onClick="clickIdFunction(\'',data_map()$id,'\')" id="',data_map()$id,'">click for more info</button>'
-                       ),
-        clusterOptions = markerClusterOptions()
-      ) %>%
-      addProviderTiles(provider = providers$Jawg.Light)
-  })
-  
-  
   #welcome page
   output$start_page <- renderUI({
     includeHTML("www/index.html")
