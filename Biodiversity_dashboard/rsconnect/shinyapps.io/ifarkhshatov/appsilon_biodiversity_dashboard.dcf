@@ -5,7 +5,7 @@ account: ifarkhshatov
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 7958974
-bundleId: 6688179
+bundleId: 6688330
 url: https://ifarkhshatov.shinyapps.io/appsilon_biodiversity_dashboard/
-when: 1672607902.81289
-lastSyncTime: 1672607902.8129
+when: 1672615548.56274
+lastSyncTime: 1672615548.56275

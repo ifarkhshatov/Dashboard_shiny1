@@ -10,8 +10,10 @@ list_of_countries <-
   fread("data_countries.csv", encoding = "UTF-8") %>%
   filter(Code %in%  sub("\\..*", "", list.files("data/")))
 
-
+library(reactlog)
 library(shiny)
+reactlog_enable()
+
 
 # Define server logic required to draw a histogram
 #suspendWhenHidden=FALSE

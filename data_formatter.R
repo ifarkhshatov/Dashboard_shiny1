@@ -53,9 +53,9 @@ data_tables <- list()
 # Loop over the data tables and save them to RData files
 for (country in names(data_tables)) {
   data_to_save <- data_tables[[country]]
-  save(data_to_save, file = paste0("Appsilon_Biodiversity_dashboard/data/",country, ".RData"))
+  save(data_to_save, file = paste0("Biodiversity_dashboard/data/",country, ".RData"))
 }
 save(data_tables, file = paste0("big_data.RData"))
 
-file.exists("Appsilon_Biodiversity_dashboard/data/AAS.RData")
-load(file = "Appsilon_Biodiversity_dashboard/data/BG.RData")
+file.exists("Biodiversity_dashboard/data/AAS.RData")
+load(file = "Biodiversity_dashboard/data/BG.RData")
